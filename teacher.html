@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Teacher Dashboard | ASI</title><link rel="stylesheet" href="css/style.css"></head>
+<body><header class="top"><div><b>ASI INSTITUTE</b><span>Teacher Portal</span></div><a href="index.html">Home</a></header>
+<main class="dashboard"><h1>Teacher Dashboard</h1>
+<section class="panel"><h2>📄 PDF → LIVE TEST</h2><p class="muted">Upload a question PDF, review extracted questions, then publish the test.</p>
+<div class="grid"><label>Test title<input id="title" placeholder="NEET Biology Test 01"></label><label>Exam<select id="exam"><option>NEET</option><option>JEE</option></select></label><label>Subject<input id="subject" placeholder="Biology / Physics / Chemistry / Maths"></label><label>Duration (minutes)<input id="duration" type="number" value="60"></label></div>
+<label class="upload"><input id="pdf" type="file" accept="application/pdf"><span>Choose Question PDF</span></label>
+<div class="actions"><button class="btn" onclick="previewPDF()">Preview / Extract Questions</button><button class="btn secondary" onclick="publishTest()">🚀 Publish LIVE</button></div>
+</section>
+<section class="panel"><h2>Question Preview</h2><div id="preview" class="preview"><p class="muted">Upload a PDF to begin. This demo stores the test locally; backend PDF extraction will be connected next.</p></div></section>
+<section class="panel"><h2>Published Tests</h2><div id="published"></div></section>
+</main><script src="js/teacher.js"></script></body></html>

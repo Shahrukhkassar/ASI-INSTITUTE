@@ -1,0 +1,3 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Result | ASI</title><link rel="stylesheet" href="css/style.css"></head><body><header class="top"><b>ASI INSTITUTE</b></header><main class="dashboard"><section class="panel result"><h1>Test Result</h1><div id="result"></div><a class="btn" href="student.html">Back to Dashboard</a></section></main><script>
+const r=JSON.parse(localStorage.getItem('asi_last_result')||'{}');document.getElementById('result').innerHTML='<div class="score">'+(r.score??0)+'%</div><p>Correct: '+(r.correct??0)+' / '+(r.total??0)+'</p>';
+</script></body></html>
