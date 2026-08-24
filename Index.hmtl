@@ -1,50 +1,289 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ASI Institute - Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ASI Institute - NEET JEE CBT</title>
 <style>
-body{font-family:Arial;background:#f0f2f5;margin:0;padding:20px}
-.card{background:white;padding:20px;border-radius:12px;max-width:400px;margin:auto;box-shadow:0 2px 10px #0001}
-input{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
-button{width:100%;padding:12px;background:#0d6efd;color:white;border:0;border-radius:8px;font-size:16px}
+*{box-sizing:border-box} body{margin:0;font-family:Arial;background:#f0f2f5}
+.page{display:none;padding:15px}.page.active{display:block}
+.card{background:white;padding:15px;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 8px #0001}
+input,textarea{width:100%;padding:12px;margin:6px 0;border:1px solid #ccc;border-radius:8px}
+button{padding:12px 16px;border:0;border-radius:8px;color:white;cursor:pointer;font-weight:bold}
+.btn-blue{background:#0d6efd}.btn-green{background:#28a745}.btn-red{background:#dc3545}.btn-black{background:#222}.btn-purple{background:#6f42c1}
+.top{background:#222;color:white;padding:10px;display:flex;justify-content:space-between;position:sticky;top:0;z-index:10}
+.main{display:flex;height:calc(100vh - 44px)}.left{flex:1;padding:15px;overflow:auto;background:white}.right{width:145px;background:#e9ecef;padding:8px;overflow:auto}
+.qbtn{width:36px;height:36px;margin:3px;border:1px solid #ccc;border-radius:4px;background:white}.qbtn.green{background:#28a745;color:white}.qbtn.red{background:#dc3545;color:white}.qbtn.purple{background:#6f42c1;color:white}.qbtn.active{border:2px solid black}
+.option{border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:8px;display:block;background:#fff}
 </style>
 </head>
 <body>
-<div class="card">
-<h2>ASI Institute Login</h2>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="page active">
+<div class="card" style="max-width:400px;margin:40px auto">
+<h2>ASI Institute - Sultanpur</h2>
 <input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
-<button onclick="login()">Login / Signup</button>
-<p id="msg"></p>
-<button onclick="location.href='student.html'" style="background:green;margin-top:10px">Go to Tests</button>
+<input id="password" type="password" placeholder="Password (6+ char)">
+<button class="btn-blue" style="width:100%" onclick="login()">Login / Signup</button>
+<p id="loginMsg"></p>
+<small>Login ke baad test dikhenge. Teacher ke liye same login hai.</small>
+</div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="dashPage" class="page">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<h2>Daily Tests</h2><button class="btn-black" onclick="logout()">Logout</button>
+</div>
+<div id="testList">Loading tests...</div>
+
+<div class="card" style="margin-top:20px;border:2px solid #0d6efd">
+<h3>🔗 Telegram Link (Result ke liye)</h3>
+<p style="font-size:13px">@ASI_BIOLOGY_BOT pe /start likho, jo ID de wo yaha daalo</p>
+<input id="tid" placeholder="Telegram ID">
+<button class="btn-green" style="width:100%;margin-top:6px" onclick="linkTelegram()">Link Telegram</button>
+<p id="linkMsg"></p>
+</div>
+
+<div class="card" style="margin-top:20px;background:#fffbe6">
+<h3>👨‍🏫 Teacher Panel - Naya Test Banao</h3>
+<input id="tTitle" placeholder="Test Title - Ex: Biology 25 Aug">
+<input id="tTime" placeholder="Time in minutes" value="60">
+<textarea id="tQ" rows="8" placeholder="Format: Question | Opt1 | Opt2 | Opt3 | Opt4 | Correct(0-3)
+Ex:
+Heart me kitne chamber? | 2 | 3 | 4 | 5 | 2
+DNA full form? | Deoxy Acid | Deoxyribo Nucleic Acid | Double | None | 1"></textarea>
+<button class="btn-black" style="width:100%" onclick="publishTest()">Publish Test</button>
+<p id="pubMsg"></p>
+</div>
+</div>
+
+<!-- TEST CBT PAGE -->
+<div id="cbtPage" class="page" style="padding:0">
+<div class="top"><div id="cbtTitle">Test</div><div id="timer">--:--</div></div>
+<div class="main">
+<div class="left">
+<h3 id="qText">Loading...</h3>
+<div id="qOptions"></div>
+<br>
+<button class="btn-black" onclick="clearRes()">Clear</button>
+<button class="btn-purple" onclick="markReview()">Mark Review</button>
+<button class="btn-blue" onclick="saveNext()">Save & Next</button>
+<button class="btn-red" style="float:right" onclick="submitTest()">Submit</button>
+</div>
+<div class="right" id="pallet"></div>
+</div>
+</div>
+
+<!-- RESULT PAGE -->
+<div id="resultPage" class="page">
+<div class="card" style="max-width:400px;margin:30px auto;text-align:center">
+<h2>Result</h2>
+<h1 id="resScore">0/0</h1>
+<p id="resTitle"></p>
+<p>Result Telegram pe bhi jayega agar ID link hai to @ASI_BIOLOGY_BOT pe</p>
+<button class="btn-blue" style="width:100%" onclick="showPage('dashPage')">Back to Tests</button>
+</div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBKGWiuW2QIVgKqe9zb04xnS2zx3eu8dLg",
-  authDomain: "asi-institute.firebaseapp.com",
-  projectId: "asi-institute",
-};
+const firebaseConfig = { apiKey: "AIzaSyBKGWiuW2QIVgKqe9zb04xnS2zx3eu8dLg", authDomain: "asi-institute.firebaseapp.com", projectId: "asi-institute" };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-window.login = async () => {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  try{
-    await signInWithEmailAndPassword(auth, email, password);
-    document.getElementById('msg').innerText = "Login Success";
-  }catch(e){
-    try{
-      await createUserWithEmailAndPassword(auth, email, password);
-      document.getElementById('msg').innerText = "Account Ban Gaya, Ab Go to Tests dabao";
-    }catch(err){ document.getElementById('msg').innerText = err.message }
-  }
+let questions=[], current=0, answers={}, status={}, curTestId, curTestTitle, curTime, userInfo, currentUser;
+
+window.showPage = (id)=>{ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+onAuthStateChanged(auth, async (u)=>{
+ if(!u){ showPage('loginPage'); return; }
+ currentUser=u;
+ showPage('dashPage');
+ loadTests();
+ const us = await getDoc(doc(db,"users",u.uid)); userInfo = us.exists()?us.data():{};
+ if(userInfo.telegramId) document.getElementById('tid').value=userInfo.telegramId;
+});
+
+window.login = async()=>{
+ const e=document.getElementById('email').value, p=document.getElementById('password').value;
+ try{ await signInWithEmailAndPassword(auth,e,p); }catch(err){
+   try{ await createUserWithEmailAndPassword(auth,e,p); document.getElementById('loginMsg').innerText="Account ban gaya, login ho raha hai..."; }catch(e2){ document.getElementById('loginMsg').innerText=e2.message; }
+ }
+}
+
+window.logout = ()=> signOut(auth);
+
+async function loadTests(){
+ const snap = await getDocs(collection(db,"tests"));
+ let h="";
+ snap.forEach(d=>{
+   const t=d.data();
+   h+=`<div class="card" style="display:flex;justify-content:space-between;align-items:center"><div><b>${t.title}</b><br><small>${t.questions?.length||0} Qs | ${t.time} min</small></div><button class="btn-blue" onclick="startTest('${d.id}')">Start</button></div>`;
+ });
+ document.getElementById('testList').innerHTML = h || "Abhi koi test nahi hai. Upar Teacher Panel se banao.";
+}
+window.startTest = async(id)=>{
+ curTestId=id;
+ const s = await getDoc(doc(db,"tests",id));
+ const t=s.data(); questions=t.questions; curTestTitle=t.title; curTime=t.time*60; answers={}; status={}; current=0;
+ document.getElementById('cbtTitle').innerText=t.title;
+ showPage('cbtPage'); loadQ(0); startTimer();
+}
+function loadQ(i){
+ current=i;
+ document.getElementById('qText').innerText=`Q${i+1}. ${questions[i].q}`;
+ let html="";
+ questions[i].o.forEach((op,idx)=>{ html+=`<label class="option"><input type="radio" name="opt" value="${idx}" ${answers[i]==idx?'checked':''}> ${op}</label>`; });
+ document.getElementById('qOptions').innerHTML=html;
+ let ph="";
+ questions.forEach((_,j)=>{
+   let cls=status[j]||""; if(answers[j]!=undefined) cls="green"; if(j==current) cls+=" active";
+   ph+=`<button class="qbtn ${cls}" onclick="loadQ(${j})">${j+1}</button>`;
+ });
+ document.getElementById('pallet').innerHTML=ph;
+}
+window.saveNext=()=>{ let s=document.querySelector('input[name="opt"]:checked'); if(s) answers[current]=parseInt(s.value); status[current]="green"; if(current<questions.length-1) loadQ(current+1); else loadQ(current); }
+window.markReview=()=>{ status[current]="purple"; if(current<questions.length-1) loadQ(current+1); else loadQ(current); }
+window.clearRes=()=>{ delete answers[current]; status[current]="red"; loadQ(current); }
+
+let timerInt;
+function startTimer(){
+ let time=curTime; clearInterval(timerInt);
+ timerInt=setInterval(()=>{
+   time--; if(time<=0){ clearInterval(timerInt); submitTest(); return; }
+   let h=Math.floor(time/3600),m=Math.floor((time%3600)/60),s=time%60;
+   document.getElementById('timer').innerText=`${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+ },1000);
+}
+
+window.submitTest = async()=>{
+ if(!confirm('Submit karna hai?')) return;
+ clearInterval(timerInt);
+ let score=0; questions.forEach((q,i)=>{ if(answers[i]==q.ans) score++; });
+ try{
+   await addDoc(collection(db,"results"),{ testId:curTestId, testTitle:curTestTitle, score, total:questions.length, answers, telegramId: userInfo?.telegramId||null, userId: currentUser.uid, email: currentUser.email, createdAt: new Date() });
+ }catch(e){}
+ document.getElementById('resScore').innerText=`${score}/${questions.length}`;
+ document.getElementById('resTitle').innerText=curTestTitle;
+ showPage('resultPage');
+}
+window.loadQ=loadQ;
+
+window.linkTelegram = async()=>{
+ const tid=document.getElementById('tid').value.trim();
+ if(!tid) return alert('ID daalo');
+ await setDoc(doc(db,"users",currentUser.uid),{ telegramId:tid, email:currentUser.email },{merge:true});
+ userInfo.telegramId=tid;
+ document.getElementById('linkMsg').innerText="Linked! Ab result @ASI_BIOLOGY_BOT pe ayega";
+}
+window.publishTest = async()=>{
+ const title=document.getElementById('tTitle').value, time=document.getElementById('tTime').value;
+ const raw=document.getElementById('tQ').value.trim().split('\n');
+ let qs=[];
+ raw.forEach(line=>{
+   const p=line.split('|'); if(p.length>=6){ qs.push({q:p[0].trim(), o:[p[1].trim(),p[2].trim(),p[3].trim(),p[4].trim()], ans:parseInt(p[5].trim())}); }
+ });
+ if(!title||qs.length==0) return alert('Title aur Question sahi likho');
+ await addDoc(collection(db,"tests"),{ title, time:parseInt(time), questions:qs, createdAt:new Date() });
+ document.getElementById('pubMsg').innerText=`Published! ${qs.length} Qs`; loadTests();
+ document.getElementById('tTitle').value=""; document.getElementById('tQ').value="";
 }
 </script>
 </body>
-</html>
+</html>￼EnterYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ASI Institute - NEET JEE CBT</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:Arial;background:#f0f2f5}
+.page{display:none;padding:15px}.page.active{display:block}
+.card{background:white;padding:15px;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 8px #0001}
+input,textarea{width:100%;padding:12px;margin:6px 0;border:1px solid #ccc;border-radius:8px}
+button{padding:12px 16px;border:0;border-radius:8px;color:white;cursor:pointer;font-weight:bold}
+.btn-blue{background:#0d6efd}.btn-green{background:#28a745}.btn-red{background:#dc3545}.btn-black{background:#222}.btn-purple{background:#6f42c1}
+.top{background:#222;color:white;padding:10px;display:flex;justify-content:space-between;position:sticky;top:0;z-index:10}
+.main{display:flex;height:calc(100vh - 44px)}.left{flex:1;padding:15px;overflow:auto;background:white}.right{width:145px;background:#e9ecef;padding:8px;overflow:auto}
+.qbtn{width:36px;height:36px;margin:3px;border:1px solid #ccc;border-radius:4px;background:white}.qbtn.green{background:#28a745;color:white}.qbtn.red{background:#dc3545;color:white}.qbtn.purple{background:#6f42c1;color:white}.qbtn.active{border:2px solid black}
+.option{border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:8px;display:block;background:#fff}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="page active">
+<div class="card" style="max-width:400px;margin:40px auto">
+<h2>ASI Institute - Sultanpur</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password (6+ char)">
+<button class="btn-blue" style="width:100%" onclick="login()">Login / Signup</button>
+<p id="loginMsg"></p>
+<small>Login ke baad test dikhenge. Teacher ke liye same login hai.</small>
+</div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="dashPage" class="page">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<h2>Daily Tests</h2><button class="btn-black" onclick="logout()">Logout</button>
+</div>
+<div id="testList">Loading tests...</div>
+
+<div class="card" style="margin-top:20px;border:2px solid #0d6efd">
+<h3>🔗 Telegram Link (Result ke liye)</h3>
+<p style="font-size:13px">@ASI_BIOLOGY_BOT pe /start likho, jo ID de wo yaha daalo</p>
+<input id="tid" placeholder="Telegram ID">
+<button class="btn-green" style="width:100%;margin-top:6px" onclick="linkTelegram()">Link Telegram</button>
+<p id="linkMsg"></p>
+</div>
+
+<div class="card" style="margin-top:20px;background:#fffbe6">
+<h3>👨‍🏫 Teacher Panel - Naya Test Banao</h3>
+<input id="tTitle" placeholder="Test Title - Ex: Biology 25 Aug">
+<input id="tTime" placeholder="Time in minutes" value="60">
+<textarea id="tQ" rows="8" placeholder="Format: Question | Opt1 | Opt2 | Opt3 | Opt4 | Correct(0-3)
+Ex:
+Heart me kitne chamber? | 2 | 3 | 4 | 5 | 2
+DNA full form? | Deoxy Acid | Deoxyribo Nucleic Acid | Double | None | 1"></textarea>
+<button class="btn-black" style="width:100%" onclick="publishTest()">Publish Test</button>
+<p id="pubMsg"></p>
+</div>
+</div>
+
+<!-- TEST CBT PAGE -->
+<div id="cbtPage" class="page" style="padding:0">
+<div class="top"><div id="cbtTitle">Test</div><div id="timer">--:--</div></div>
+<div class="main">
+<div class="left">
+<h3 id="qText">Loading...</h3>
+<div id="qOptions"></div>
+<br>
+<button class="btn-black" onclick="clearRes()">Clear</button>
+<button class="btn-purple" onclick="markReview()">Mark Review</button>
+<button class="btn-blue" onclick="saveNext()">Save & Next</button>
+<button class="btn-red" style="float:right" onclick="submitTest()">Submit</button>
+</div>
+<div class="right" id="pallet"></div>
+</div>
+</div>
+
+<!-- RESULT PAGE -->
+<div id="resultPage" class="page">
+<div class="card" style="max-width:400px;margin:30px auto;text-align:center">
+<h2>Result</h2>
+<h1 id="resScore">0/0</h1>
+<p id="resTitle"></p>
+<p>Result Telegram pe bhi jayega agar ID link hai to @ASI_BIOLOGY_BOT pe</p>
+<button class="btn-blue" style="width:100%" onclick="showPage('dashPage')">Back to Tests</button>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
